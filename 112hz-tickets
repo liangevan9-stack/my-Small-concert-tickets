@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>112Hz 音樂會 - 雲端管理後台</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700&family=Noto+Sans+TC:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 1000px; width: 100%; display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h1, h2 { font-family: 'Noto Serif TC', serif; color: #333; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #8b7d6b; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; background: #8b7d6b; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background: #6d6152; }
+        .log-list { height: 500px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px; background: #fafafa; }
+        .log-item { background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #8b7d6b; box-shadow: 0 2px 5px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; }
+        .log-info { font-size: 0.85rem; }
+        .log-name { font-weight: bold; font-size: 1rem; color: #333; }
+        .log-time { color: #999; font-size: 0.75rem; margin-top: 3px; }
+        .status-tag { background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+        .url-result { margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 1px dashed #ff9800; display: none; }
+        .url-text { word-break: break-all; font-size: 0.8rem; color: #e65100; font-family: monospace; margin: 10px 0; }
+        .config-section { background: #e3f2fd; border: 1px solid #90caf9; }
+    </style>
+</head>
+<body>
+    <header style="margin-bottom: 30px; text-align: center;">
+        <h1>112Hz 音樂會專業票務管理</h1>
+        <p style="color: #666;">即時監控前台撕票狀態</p>
+    </header>
+
+    <div class="container">
+        <div class="left-col">
+            <!-- 網址設定區 -->
+            <div class="card config-section">
+                <h2 style="font-size: 1.2rem; color: #1565c0;">1. 部署設定</h2>
+                <div class="form-group">
+                    <label>GitHub 帳號名稱</label>
+                    <input type="text" id="gh-user" placeholder="例如: yourname" oninput="saveConfig()">
+                </div>
+                <div class="form-group">
+                    <label>GitHub 倉庫名稱</label>
+                    <input type="text" id="gh-repo" placeholder="例如: 112hz-tickets" oninput="saveConfig()">
+                </div>
+                <p style="font-size: 0.7rem; color: #666;">* 設定後，生成的連結將指向您的 GitHub Pages 絕對路徑。</p>
+            </div>
+
+            <!-- 生成器 -->
+            <div class="card">
+                <h2>2. 生成票根</h2>
+                <div class="form-group">
+                    <label>觀眾姓名</label>
+                    <input type="text" id="name" value="嘉賓">
+                </div>
+                <div class="form-group">
+                    <label>演出場次</label>
+                    <select id="date">
+                        <option value="115/5/19 (二) 19:00">115/5/19 流行樂團暨協奏曲</option>
+                        <option value="115/5/20 (三) 19:00">115/5/20 古典樂暨音樂劇</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex: 1;"><label>排數</label><input type="text" id="row" value="A"></div>
+                    <div style="flex: 1;"><label>座號</label><input type="number" id="num" value="1"></div>
+                </div>
+                <button class="btn" onclick="generate()">生成專屬連結</button>
+                <div id="url-area" class="url-result">
+                    <label>專屬票根連結 (發送給觀眾)：</label>
+                    <div id="url-display" class="url-text"></div>
+                    <button class="btn" style="background: #4a4a4a;" onclick="copyUrl()">複製連結</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：即時紀錄 -->
+        <div class="card">
+            <h2>即時撕票紀錄</h2>
+            <div id="log-container" class="log-list">
+                <p style="text-align: center; color: #999; margin-top: 50px;">尚無撕票紀錄...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Firebase 設定 ---
+        const firebaseConfig = { databaseURL: "https://YOUR-PROJECT-ID.firebaseio.com" };
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            listenToLogs();
+        } catch (e) { console.error("Firebase 初始化失敗"); }
+
+        // 載入暫存設定
+        window.onload = function() {
+            document.getElementById('gh-user').value = localStorage.getItem('gh-user') || '';
+            document.getElementById('gh-repo').value = localStorage.getItem('gh-repo') || '';
+        };
+
+        function saveConfig() {
+            localStorage.setItem('gh-user', document.getElementById('gh-user').value);
+            localStorage.setItem('gh-repo', document.getElementById('gh-repo').value);
+        }
+
+        function generate() {
+            const user = document.getElementById('gh-user').value.trim();
+            const repo = document.getElementById('gh-repo').value.trim();
+            
+            if (!user || !repo) {
+                alert('請先填寫 GitHub 帳號與倉庫名稱，以生成正確的連結！');
+                return;
+            }
+
+            const name = document.getElementById('name').value;
+            const date = document.getElementById('date').value;
+            const row = document.getElementById('row').value;
+            const num = document.getElementById('num').value;
+            const id = '112HZ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+
+            const data = { n: name, d: date, r: row, s: num, i: id };
+            const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
+            
+            // 生成絕對路徑連結
+            const finalUrl = `https://${user}.github.io/${repo}/index.html?t=${encoded}`;
+
+            document.getElementById('url-area').style.display = 'block';
+            document.getElementById('url-display').innerText = finalUrl;
+        }
+
+        function copyUrl() {
+            const text = document.getElementById('url-display').innerText;
+            navigator.clipboard.writeText(text).then(() => alert('連結已複製！'));
+        }
+
+        function listenToLogs() {
+            if (!db) return;
+            db.ref('torn_tickets').on('value', (snapshot) => {
+                const container = document.getElementById('log-container');
+                container.innerHTML = '';
+                const data = snapshot.val();
+                if (!data) {
+                    container.innerHTML = '<p style="text-align: center; color: #999; margin-top: 50px;">尚無撕票紀錄...</p>';
+                    return;
+                }
+                const items = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'log-item';
+                    div.innerHTML = `
+                        <div class="log-info">
+                            <div class="log-name">${item.name} <span style="font-weight: normal; font-size: 0.8rem; color: #666;">(${item.seat})</span></div>
+                            <div class="log-time">ID: ${item.id} | 演出：${item.showDate}</div>
+                            <div class="log-time">撕票時間：${item.time}</div>
+                        </div>
+                        <div class="status-tag">已撕票</div>
+                    `;
+                    container.appendChild(div);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
