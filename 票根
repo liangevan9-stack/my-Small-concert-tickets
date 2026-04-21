@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>112Hz 不平凡的共振 - 網路票根</title>
+    <style>
+        /* 基本背景設定 */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: "Microsoft JhengHei", sans-serif;
+        }
+
+        /* 票根主體 */
+        .ticket {
+            width: 350px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 圖片區域 */
+        .ticket-header {
+            width: 100%;
+            height: 250px;
+            background: url('bg.jpg') no-repeat center center;
+            background-size: cover;
+        }
+
+        /* 內容區域 */
+        .ticket-body {
+            padding: 25px;
+            text-align: center;
+            background: #fff;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* 資訊清單 */
+        .info-list {
+            text-align: left;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .label { color: #999; }
+        .value { color: #333; font-weight: 600; }
+
+        /* 票根虛線切割效果 */
+        .ticket::after {
+            content: "";
+            position: absolute;
+            left: -10px;
+            bottom: 120px;
+            width: 20px;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 50%;
+        }
+        .ticket::before {
+            content: "";
+            position: absolute;
+            right: -10px;
+            bottom: 120px;
+            width: 20px;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 50%;
+        }
+
+        /* 底部裝飾 */
+        .footer {
+            background: #333;
+            color: white;
+            padding: 15px;
+            font-size: 12px;
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ticket">
+        <div class="ticket-header"></div>
+        
+        <div class="ticket-body">
+            <div class="title">112Hz</div>
+            <div class="subtitle">不平凡的共振</div>
+            
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="label">演出時間</span>
+                    <span class="value">2026 / 05 / 20 (待定)</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">演出地點</span>
+                    <span class="value">音樂廳 A 廳</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">座位資訊</span>
+                    <span class="value">VIP 區 08 排 12 號</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">票券編號</span>
+                    <span class="value">NO. 20260422-01</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            ADMIT ONE | 音樂會專屬票券
+        </div>
+    </div>
+
+</body>
+</html>
